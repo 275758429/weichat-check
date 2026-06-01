@@ -22,28 +22,6 @@ jobs:
           distribution: 'temurin'
           java-package: jdk
 
-      - name: Verify JDK
-        shell: pwsh
-        run: |
-          Write-Host "JAVA_HOME: $env:JAVA_HOME"
-          java -version
-          $jpackage = Get-Command jpackage -ErrorAction SilentlyContinue
-          if ($jpackage) {
-            Write-Host "jpackage found at: $($jpackage.Source)"
-            & $jpackage.Source --version
-          } else {
-            Write-Host "jpackage NOT found in PATH"
-            $jdkBin = Join-Path $env:JAVA_HOME "bin"
-            $jpackagePath = Join-Path $jdkBin "jpackage.exe"
-            if (Test-Path $jpackagePath) {
-              Write-Host "jpackage found in JDK bin: $jpackagePath"
-              & $jpackagePath --version
-            } else {
-              Write-Error "jpackage not found!"
-              exit 1
-            }
-          }
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -60,36 +38,19 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Run tests
-        run: ./gradlew test
-        continue-on-error: true
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-reports
-          path: build/reports/tests/
+        run: ./gradlew test --continue
 
       - name: Package EXE
-        run: ./gradlew packageExe --stacktrace
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
+        run: |
+          ./gradlew packageExe --info 2>&1 | Tee-Object -FilePath build/packaging.log
+        shell: pwsh
 
-      - name: Upload EXE artifact
+      - name: Upload all artifacts and logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: WeChatMonitor-EXE
-          path: build/compose/binaries/main/exe/*.exe
-          if-no-files-found: warn
-
-      - name: Upload build logs on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: build-logs
+          name: build-output
           path: |
-            build/compose/logs/
-            build/reports/
+            build/compose/binaries/main/exe/
+            build/packaging.log
+            build/reports/tests/
