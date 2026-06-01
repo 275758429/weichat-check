@@ -20,13 +20,29 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          java-package: jdk
 
-      - name: Verify JDK tools
+      - name: Verify JDK
+        shell: pwsh
         run: |
+          Write-Host "JAVA_HOME: $env:JAVA_HOME"
           java -version
-          javac -version
-          where jpackage
-          jpackage --version
+          $jpackage = Get-Command jpackage -ErrorAction SilentlyContinue
+          if ($jpackage) {
+            Write-Host "jpackage found at: $($jpackage.Source)"
+            & $jpackage.Source --version
+          } else {
+            Write-Host "jpackage NOT found in PATH"
+            $jdkBin = Join-Path $env:JAVA_HOME "bin"
+            $jpackagePath = Join-Path $jdkBin "jpackage.exe"
+            if (Test-Path $jpackagePath) {
+              Write-Host "jpackage found in JDK bin: $jpackagePath"
+              & $jpackagePath --version
+            } else {
+              Write-Error "jpackage not found!"
+              exit 1
+            }
+          }
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -46,6 +62,8 @@ jobs:
       - name: Run tests
         run: ./gradlew test
         continue-on-error: true
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
@@ -56,6 +74,8 @@ jobs:
 
       - name: Package EXE
         run: ./gradlew packageExe --stacktrace
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
@@ -70,4 +90,6 @@ jobs:
         if: failure()
         with:
           name: build-logs
-          path: build/compose/logs/
+          path: |
+            build/compose/logs/
+            build/reports/
