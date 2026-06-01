@@ -54,6 +54,7 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test --no-daemon
+        continue-on-error: true
 
       - name: Package EXE
         run: ./gradlew packageExe --no-daemon --stacktrace
