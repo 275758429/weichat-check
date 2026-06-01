@@ -1,0 +1,33 @@
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+# SQLite
+*.db
+*.db-journal
+
+# macOS
+.DS_Store
+
+# Tessdata (large binary files)
+tessdata/
+
+# Logs
+logs/
+*.log
+
+# Exported CSV files
+clues_export_*.csv
+.claude/
