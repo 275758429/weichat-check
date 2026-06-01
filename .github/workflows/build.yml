@@ -37,20 +37,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Kill Gradle daemon and set JDK
+        shell: pwsh
+        run: |
+          ./gradlew --stop 2>$null
+          $javaHome = $env:JAVA_HOME
+          Write-Host "JAVA_HOME = $javaHome"
+          $jpackage = Join-Path $javaHome "bin\jpackage.exe"
+          if (Test-Path $jpackage) {
+            Write-Host "jpackage found: $jpackage"
+            & $jpackage --version
+          }
+          # Write to gradle.properties
+          Add-Content -Path "gradle.properties" -Value "`norg.gradle.java.home=$javaHome"
+          Get-Content "gradle.properties"
+
       - name: Run tests
-        run: ./gradlew test --continue
+        run: ./gradlew test --no-daemon
 
       - name: Package EXE
-        run: |
-          ./gradlew packageExe --info 2>&1 | Tee-Object -FilePath build/packaging.log
-        shell: pwsh
+        run: ./gradlew packageExe --no-daemon --stacktrace
 
-      - name: Upload all artifacts and logs
+      - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: build-output
-          path: |
-            build/compose/binaries/main/exe/
-            build/packaging.log
-            build/reports/tests/
+          name: WeChatMonitor-EXE
+          path: build/compose/binaries/main/exe/*.exe
+          if-no-files-found: warn
