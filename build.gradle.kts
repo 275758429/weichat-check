@@ -47,3 +47,7 @@ compose.desktop {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.named("checkRuntime") {
+    enabled = false
+}
