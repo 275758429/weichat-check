@@ -36,11 +36,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Install WiX Toolset (for MSI packaging)
-        run: |
-          choco install wixtoolset --version=3.14.1 --no-progress --yes
-          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" >> $env:GITHUB_PATH
-
       - name: Run tests
         run: ./gradlew test
         continue-on-error: true
@@ -52,16 +47,8 @@ jobs:
           name: test-reports
           path: build/reports/tests/
 
-      - name: Build distribution (EXE + MSI)
-        run: ./gradlew packageDistributionForCurrentOS
-
-      - name: Upload MSI artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: WeChatMonitor-MSI
-          path: build/compose/binaries/main/msi/*.msi
-          if-no-files-found: warn
+      - name: Package EXE
+        run: ./gradlew packageExe
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
@@ -69,12 +56,4 @@ jobs:
         with:
           name: WeChatMonitor-EXE
           path: build/compose/binaries/main/exe/*.exe
-          if-no-files-found: warn
-
-      - name: Upload distribution files
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: WeChatMonitor-all
-          path: build/compose/binaries/main/*/
-          if-no-files-found: warn
+          if-no-files-found: error
